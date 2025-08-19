@@ -235,7 +235,7 @@
         }
         return map;
     }
-
+//signature: Karokh kappen Araf
     function createEnemy(x, y) {
         let type = (MONSTER_TYPE_COUNT > 0) ? Math.floor(Math.random() * MONSTER_TYPE_COUNT) : 0;
         return { x, y, alive: true, health: 3, state: 'idle', attackCooldown: 0, lastSeenPlayerX: 0, lastSeenPlayerY: 0, monsterType: type };
@@ -512,4 +512,5 @@
     main();
   </script>
 </body>
+
 </html>
