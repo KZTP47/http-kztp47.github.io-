@@ -1,1 +1,516 @@
 # http-kztp47.github.io-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Enhanced Doom Clone</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Courier New', monospace;
+      background-color: #111;
+      color: #ff0000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+    #game-container {
+      position: relative;
+      width: 800px;
+      height: 600px;
+      border: 4px solid #ff0000;
+      box-shadow: 0 0 20px #ff0000;
+      background-color: #000;
+    }
+    #game-canvas {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      cursor: crosshair;
+      image-rendering: pixelated;
+    }
+    #ui {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      background-color: rgba(0, 0, 0, 0.8);
+      padding: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-sizing: border-box;
+    }
+    #health, #ammo, #score {
+      font-size: 24px;
+      font-weight: bold;
+      text-shadow: 2px 2px 4px #000;
+    }
+    #health { color: #00ff00; }
+    #ammo   { color: #ffff00; }
+    #title {
+      position: absolute;
+      top: 20px;
+      width: 100%;
+      text-align: center;
+      font-size: 36px;
+      font-weight: bold;
+      text-shadow: 3px 3px 6px #000;
+      color: #ff0000;
+    }
+    #instructions {
+      position: absolute;
+      top: 80px;
+      width: 100%;
+      text-align: center;
+      font-size: 18px;
+      color: #fff;
+      text-shadow: 2px 2px 4px #000;
+    }
+    #crosshair {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 20px;
+      height: 20px;
+      pointer-events: none;
+      z-index: 10;
+    }
+    #crosshair::before,
+    #crosshair::after {
+      content: '';
+      position: absolute;
+      background-color: #ff0000;
+      box-shadow: 0 0 4px rgba(255, 0, 0, 0.8);
+    }
+    #crosshair::before {
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 2px;
+      transform: translateY(-50%);
+    }
+    #crosshair::after {
+      left: 50%;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      transform: translateX(-50%);
+    }
+    #minimap-container {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 160px;
+      height: 160px;
+      background-color: rgba(0, 0, 0, 0.7);
+      border: 2px solid #ff0000;
+    }
+    #minimap {
+        width: 100%;
+        height: 100%;
+    }
+    #game-over {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: rgba(0, 0, 0, 0.9);
+      color: #ff0000;
+      padding: 30px;
+      text-align: center;
+      font-size: 32px;
+      font-weight: bold;
+      border: 3px solid #ff0000;
+      display: none;
+      z-index: 20;
+    }
+    #game-over-title { font-size: 48px; margin-bottom: 10px; }
+    #game-over-subtitle { font-size: 18px; margin: 10px 0; }
+    /* NEW: Style for the results message, learned from Tetris game */
+    #results-message {
+      margin-top: 1.5rem;
+      font-size: 1.2rem;
+      color: #2ecc71; /* Green color for success message */
+    }
+    #restart-btn {
+      background-color: #ff0000;
+      color: #000;
+      border: none;
+      padding: 10px 20px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+    #restart-btn:hover { background-color: #cc0000; }
+  </style>
+</head>
+<body>
+  <audio id="background-music" src="Music.mp3" loop></audio>
+
+  <div id="game-container">
+    <canvas id="game-canvas"></canvas>
+    <div id="minimap-container">
+        <canvas id="minimap"></canvas>
+    </div>
+    <div id="crosshair"></div>
+    <div id="title">DOOM CLONE</div>
+    <div id="instructions">WASD to move | Mouse to look | Click to shoot | R to reload</div>
+    <div id="ui">
+      <div id="health">HEALTH: 100%</div>
+      <div id="ammo">AMMO: 47/47</div>
+      <div id="score">SCORE: 0</div>
+    </div>
+    <div id="game-over">
+      <div id="game-over-title">MISSION FAILED</div>
+      <div id="game-over-subtitle">You have been eliminated.</div>
+      <div id="results-message" style="display: none;">
+        <h2>Results sent!</h2>
+        <p>You can now close this window.</p>
+      </div>
+      <button id="restart-btn">RESTART GAME</button>
+    </div>
+  </div>
+
+  <script>
+    // --- SETUP ---
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = 800; canvas.height = 600;
+
+    const minimap = document.getElementById('minimap');
+    const minimapCtx = minimap.getContext('2d');
+    minimap.width = 160; minimap.height = 160;
+
+    const MONSTER_TYPE_COUNT = 4;
+    const monsterImages = [];
+    let assetsLoaded = false;
+
+    function preloadAssets() {
+        return new Promise((resolve) => {
+            if (MONSTER_TYPE_COUNT === 0) { assetsLoaded = true; resolve(); return; }
+            let loadedCount = 0;
+            for (let i = 1; i <= MONSTER_TYPE_COUNT; i++) {
+                const img = new Image();
+                img.src = `Monster_${i}.png`;
+                img.onload = () => { loadedCount++; if (loadedCount === MONSTER_TYPE_COUNT) { assetsLoaded = true; resolve(); } };
+                img.onerror = () => { console.error(`Failed to load Monster_${i}.png.`); loadedCount++; if (loadedCount === MONSTER_TYPE_COUNT) { assetsLoaded = true; resolve(); } };
+                monsterImages.push(img);
+            }
+        });
+    }
+
+    // --- GAME STATE ---
+    let gameState = {};
+
+    function generateMap(width, height) {
+        let map = Array.from({ length: height }, () => Array(width).fill(1));
+        let startX = Math.floor(Math.random() * (width - 2)) + 1;
+        let startY = Math.floor(Math.random() * (height - 2)) + 1;
+        let diggerX = startX; let diggerY = startY;
+        let steps = Math.floor((width * height) / 2.5);
+        const directions = [[0, -1], [0, 1], [-1, 0], [1, 0]];
+        map[diggerY][diggerX] = 0;
+        let carvedCount = 1;
+        while (carvedCount < steps) {
+            let [dx, dy] = directions[Math.floor(Math.random() * directions.length)];
+            let newX = diggerX + dx * 2, newY = diggerY + dy * 2;
+            if (newX > 0 && newX < width - 1 && newY > 0 && newY < height - 1 && map[newY][newX] === 1) {
+                map[newY - dy][newX - dx] = 0; map[newY][newX] = 0;
+                diggerX = newX; diggerY = newY; carvedCount += 2;
+            } else {
+                const carvedTiles = [];
+                for(let y = 1; y < height - 1; y++) {
+                    for (let x = 1; x < width - 1; x++) { if (map[y][x] === 0) carvedTiles.push({x, y}); }
+                }
+                if (carvedTiles.length > 0) {
+                    const randomTile = carvedTiles[Math.floor(Math.random() * carvedTiles.length)];
+                    diggerX = randomTile.x; diggerY = randomTile.y;
+                }
+            }
+        }
+        return map;
+    }
+
+    function createEnemy(x, y) {
+        let type = (MONSTER_TYPE_COUNT > 0) ? Math.floor(Math.random() * MONSTER_TYPE_COUNT) : 0;
+        return { x, y, alive: true, health: 3, state: 'idle', attackCooldown: 0, lastSeenPlayerX: 0, lastSeenPlayerY: 0, monsterType: type };
+    }
+
+    function initGame() {
+      const MAP_WIDTH = 40, MAP_HEIGHT = 40;
+      const newMap = generateMap(MAP_WIDTH, MAP_HEIGHT);
+      const validSpawns = [];
+      for (let y = 0; y < newMap.length; y++) for (let x = 0; x < newMap[y].length; x++) if (newMap[y][x] === 0) validSpawns.push({ x: x + 0.5, y: y + 0.5 });
+      if (validSpawns.length === 0) { newMap[1][1] = 0; validSpawns.push({ x: 1.5, y: 1.5 }); }
+      const playerSpawn = validSpawns.splice(Math.floor(Math.random() * validSpawns.length), 1)[0];
+      const newEnemies = [];
+      const numEnemies = 20;
+      for (let i = 0; i < numEnemies && validSpawns.length > 0; i++) {
+          const enemySpawnIndex = Math.floor(Math.random() * validSpawns.length);
+          const enemySpawn = validSpawns.splice(enemySpawnIndex, 1)[0];
+          if (Math.hypot(enemySpawn.x - playerSpawn.x, enemySpawn.y - playerSpawn.y) > 8) newEnemies.push(createEnemy(enemySpawn.x, enemySpawn.y));
+          else i--;
+      }
+      gameState = {
+        // NEW: Added startTime for tracking game duration.
+        startTime: Date.now(),
+        player: { x: playerSpawn.x, y: playerSpawn.y, angle: 0, fov: Math.PI / 3, health: 100, maxAmmo: 47, ammo: 47, score: 0, reloading: false, reloadTime: 0, isDead: false, damageFlash: 0, weaponBob: 0, isMoving: false },
+        map: newMap, enemies: newEnemies,
+        keys: { w:false, a:false, s:false, d:false, r:false },
+        pointerLocked: false, gameOver: false, muzzleFlash: 0,
+        hitMarkers: [], depthBuffer: new Array(canvas.width).fill(Infinity)
+      };
+      // NEW: Ensure the results message is hidden on a new game/restart.
+      document.getElementById('results-message').style.display = 'none';
+      document.getElementById('game-over').style.display = 'none';
+      if (document.pointerLockElement) document.exitPointerLock();
+    }
+
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    function playSound(type) {
+        if (!audioContext || audioContext.state === 'suspended') audioContext.resume();
+        if (!audioContext) return;
+        const o = audioContext.createOscillator(), g = audioContext.createGain();
+        o.connect(g); g.connect(audioContext.destination); g.gain.setValueAtTime(0, audioContext.currentTime); g.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.01);
+        switch(type) {
+            case 'shoot': o.type = 'sawtooth'; o.frequency.setValueAtTime(440, audioContext.currentTime); o.frequency.exponentialRampToValueAtTime(110, audioContext.currentTime + 0.1); g.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.15); break;
+            case 'reload': o.type = 'square'; o.frequency.setValueAtTime(220, audioContext.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.4); break;
+            case 'hit': o.type = 'sine'; o.frequency.setValueAtTime(880, audioContext.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.2); break;
+            case 'player_hurt': o.type = 'triangle'; o.frequency.setValueAtTime(330, audioContext.currentTime); o.frequency.exponentialRampToValueAtTime(100, audioContext.currentTime + 0.2); g.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.2); break;
+        }
+        o.start(audioContext.currentTime); o.stop(audioContext.currentTime + 0.5);
+    }
+
+    function normAngle(a) { a %= (Math.PI * 2); if (a < 0) a += Math.PI * 2; return a; }
+
+    function castRay(angle) {
+      const px = gameState.player.x, py = gameState.player.y, rayDirX = Math.cos(angle), rayDirY = Math.sin(angle);
+      let mapX = Math.floor(px), mapY = Math.floor(py);
+      const dX = (rayDirX === 0) ? Infinity : Math.abs(1 / rayDirX), dY = (rayDirY === 0) ? Infinity : Math.abs(1 / rayDirY);
+      let sX, sY, sdX, sdY;
+      if (rayDirX < 0) { sX = -1; sdX = (px - mapX) * dX; } else { sX = 1; sdX = (mapX + 1.0 - px) * dX; }
+      if (rayDirY < 0) { sY = -1; sdY = (py - mapY) * dY; } else { sY = 1; sdY = (mapY + 1.0 - py) * dY; }
+      let hit = false, side = 0;
+      while (!hit) {
+        if (sdX < sdY) { sdX += dX; mapX += sX; side = 0; } else { sdY += dY; mapY += sY; side = 1; }
+        if (mapX < 0 || mapX >= gameState.map[0].length || mapY < 0 || mapY >= gameState.map.length || gameState.map[mapY][mapX] > 0) hit = true;
+      }
+      let pwd = (side === 0) ? (mapX - px + (1 - sX) / 2) / (rayDirX || 1e-9) : (mapY - py + (1 - sY) / 2) / (rayDirY || 1e-9);
+      return { distance: Math.max(0.0001, pwd), side };
+    }
+
+    function drawScene() {
+      ctx.fillStyle = '#001122'; ctx.fillRect(0, 0, canvas.width, canvas.height / 2);
+      ctx.fillStyle = '#2a2a2a'; ctx.fillRect(0, canvas.height / 2, canvas.width, canvas.height / 2);
+      gameState.depthBuffer.fill(Infinity);
+      for (let x = 0; x < canvas.width; x++) {
+        const camX = 2 * x / canvas.width - 1, rayAng = gameState.player.angle + Math.atan(camX * Math.tan(gameState.player.fov / 2));
+        const ray = castRay(rayAng), lineH = Math.floor(canvas.height / ray.distance), drawS = Math.max(0, -lineH / 2 + canvas.height / 2), drawE = Math.min(canvas.height - 1, lineH / 2 + canvas.height / 2);
+        let r = 150, g = 50, b = 50;
+        if (ray.side === 1) { r *= 0.7; g *= 0.7; b *= 0.7; }
+        const light = Math.max(0.2, 1 - ray.distance / 25);
+        ctx.fillStyle = `rgb(${Math.floor(r*light)},${Math.floor(g*light)},${Math.floor(b*light)})`;
+        ctx.fillRect(x, drawS, 1, drawE - drawS);
+        gameState.depthBuffer[x] = ray.distance;
+      }
+      drawSprites(); drawOverlays(); drawMinimap();
+    }
+
+    function drawSprites() {
+        if (!assetsLoaded) return;
+        gameState.enemies.filter(e => e.alive).map(e => ({ ...e, dist: Math.hypot(e.x - gameState.player.x, e.y - gameState.player.y) })).sort((a, b) => b.dist - a.dist)
+        .forEach(e => {
+            const img = monsterImages[e.monsterType];
+            if (!img || !img.complete || img.naturalHeight === 0 || e.dist < 0.5) return;
+            const dx = e.x - gameState.player.x, dy = e.y - gameState.player.y, eAng = Math.atan2(dy, dx);
+            let rel = normAngle(eAng - gameState.player.angle);
+            if (rel > Math.PI) rel -= 2 * Math.PI;
+            if (Math.abs(rel) < gameState.player.fov / 2 + 0.2) {
+                const eSize = canvas.height / e.dist, sX = Math.floor((canvas.width / 2) * (1 + Math.tan(rel) / Math.tan(gameState.player.fov / 2)));
+                const ySt = canvas.height / 2 - eSize / 2, stX = Math.floor(sX - eSize / 2), eX = Math.floor(sX + eSize / 2);
+                for (let x = stX; x < eX; x++) if (x >= 0 && x < canvas.width && gameState.depthBuffer[x] > e.dist) ctx.drawImage(img, Math.floor(((x - stX) / eSize) * img.width), 0, 1, img.height, x, ySt, 1, eSize);
+            }
+        });
+    }
+
+    function drawOverlays() {
+      if (gameState.muzzleFlash > 0) { ctx.fillStyle = `rgba(255, 255, 0, ${gameState.muzzleFlash})`; ctx.fillRect(0, 0, canvas.width, canvas.height); gameState.muzzleFlash = Math.max(0, gameState.muzzleFlash - 0.1); }
+      if (gameState.player.damageFlash > 0) { ctx.fillStyle = `rgba(255, 0, 0, ${gameState.player.damageFlash})`; ctx.fillRect(0, 0, canvas.width, canvas.height); gameState.player.damageFlash = Math.max(0, gameState.player.damageFlash - 0.05); }
+      gameState.hitMarkers.forEach((m, idx) => { ctx.strokeStyle = `rgba(255, 255, 255, ${m.alpha})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(m.x - 10, m.y - 10); ctx.lineTo(m.x + 10, m.y + 10); ctx.moveTo(m.x + 10, m.y - 10); ctx.lineTo(m.x - 10, m.y + 10); ctx.stroke(); m.alpha -= 0.05; if (m.alpha <= 0) gameState.hitMarkers.splice(idx, 1); });
+      if (gameState.player.reloading) { ctx.fillStyle = 'rgba(255, 255, 0, 0.8)'; ctx.font = '24px Courier New'; ctx.textAlign = 'center'; ctx.fillText('RELOADING...', canvas.width / 2, canvas.height / 2 + 100); }
+    }
+
+    function drawMinimap() {
+      minimapCtx.fillStyle = '#000'; minimapCtx.fillRect(0, 0, minimap.width, minimap.height);
+      if (!gameState.map) return;
+      const scale = minimap.width / gameState.map[0].length;
+      for (let y = 0; y < gameState.map.length; y++) for (let x = 0; x < gameState.map[y].length; x++) if (gameState.map[y][x] === 1) { minimapCtx.fillStyle = '#666'; minimapCtx.fillRect(x * scale, y * scale, scale, scale); }
+      gameState.enemies.forEach(e => { if (e.alive) { minimapCtx.fillStyle = '#ff0000'; minimapCtx.fillRect(e.x * scale - 1, e.y * scale - 1, 2, 2); } });
+      minimapCtx.fillStyle = '#00ff00'; minimapCtx.fillRect(gameState.player.x * scale - 2, gameState.player.y * scale - 2, 4, 4);
+      minimapCtx.strokeStyle = '#00ff00'; minimapCtx.beginPath(); minimapCtx.moveTo(gameState.player.x * scale, gameState.player.y * scale); minimapCtx.lineTo(gameState.player.x * scale + Math.cos(gameState.player.angle) * 10, gameState.player.y * scale + Math.sin(gameState.player.angle) * 10); minimapCtx.stroke();
+    }
+
+    let lastTime = 0;
+    function gameLoop(timestamp) { if (!gameState.gameOver) update(timestamp); drawScene(); requestAnimationFrame(gameLoop); }
+    function update(timestamp) { const dt = Math.min(50, timestamp - (lastTime || timestamp)); lastTime = timestamp; updatePlayer(dt); updateEnemies(dt); updateUI(); }
+    
+    function updatePlayer(dt) {
+      if (gameState.player.isDead) return;
+      gameState.player.isMoving = gameState.keys.w || gameState.keys.s || gameState.keys.a || gameState.keys.d;
+      if (gameState.player.reloading) { gameState.player.reloadTime -= dt; if (gameState.player.reloadTime <= 0) { gameState.player.reloading = false; gameState.player.ammo = gameState.player.maxAmmo; } }
+      const moveSpeed = 0.003 * dt;
+      let newX = gameState.player.x, newY = gameState.player.y;
+      if (gameState.keys.w) { newX += Math.cos(gameState.player.angle) * moveSpeed; newY += Math.sin(gameState.player.angle) * moveSpeed; }
+      if (gameState.keys.s) { newX -= Math.cos(gameState.player.angle) * moveSpeed; newY -= Math.sin(gameState.player.angle) * moveSpeed; }
+      if (gameState.keys.a) { newX += -Math.sin(gameState.player.angle) * moveSpeed; newY += Math.cos(gameState.player.angle) * moveSpeed; }
+      if (gameState.keys.d) { newX += Math.sin(gameState.player.angle) * moveSpeed; newY += -Math.cos(gameState.player.angle) * moveSpeed; }
+      if (!checkCollision(newX, gameState.player.y)) gameState.player.x = newX;
+      if (!checkCollision(gameState.player.x, newY)) gameState.player.y = newY;
+    }
+
+    function updateEnemies(dt) {
+        const ATTACK_RANGE = 1.0, ATTACK_DAMAGE = 10, ATTACK_COOLDOWN = 1000, CHASE_SPEED = 0.0022 * dt;
+        gameState.enemies.forEach(e => {
+            if (!e.alive) return;
+            const dx = gameState.player.x - e.x, dy = gameState.player.y - e.y, dist = Math.hypot(dx, dy);
+            e.attackCooldown = Math.max(0, e.attackCooldown - dt);
+            if (hasLineOfSight(e.x, e.y)) { e.state = 'chasing'; e.lastSeenPlayerX = gameState.player.x; e.lastSeenPlayerY = gameState.player.y; }
+            else if (e.state === 'chasing' && Math.hypot(e.lastSeenPlayerX - e.x, e.lastSeenPlayerY - e.y) < 0.5) e.state = 'idle';
+            if (e.state === 'chasing') {
+                if (dist > ATTACK_RANGE) {
+                    const ang = Math.atan2(dy, dx), mX = Math.cos(ang) * CHASE_SPEED, mY = Math.sin(ang) * CHASE_SPEED;
+                    if (!checkCollision(e.x + mX, e.y)) e.x += mX;
+                    if (!checkCollision(e.x, e.y + mY)) e.y += mY;
+                } else if (e.attackCooldown <= 0) { e.state = 'attacking'; e.attackCooldown = ATTACK_COOLDOWN; takePlayerDamage(ATTACK_DAMAGE); }
+            }
+        });
+    }
+
+    function updateUI() {
+      document.getElementById('health').textContent = `HEALTH: ${gameState.player.health}%`;
+      document.getElementById('ammo').textContent   = `AMMO: ${gameState.player.ammo}/${gameState.player.maxAmmo}`;
+      document.getElementById('score').textContent  = `SCORE: ${gameState.player.score}`;
+    }
+
+    function takePlayerDamage(damage) {
+        if (gameState.player.isDead) return;
+        gameState.player.health = Math.max(0, gameState.player.health - damage);
+        gameState.player.damageFlash = 0.3; playSound('player_hurt');
+        if (gameState.player.health <= 0) { gameState.player.isDead = true; gameState.gameOver = true; endGame(false); }
+    }
+
+    function shoot() {
+      if (gameState.player.ammo <= 0 || gameState.player.reloading || gameState.player.isDead) return;
+      playSound('shoot'); gameState.player.ammo--; gameState.muzzleFlash = 0.4;
+      const shootRange = 30, shootAngle = 0.08;
+      gameState.enemies.forEach(e => {
+        if (!e.alive) return;
+        const dx = e.x - gameState.player.x, dy = e.y - gameState.player.y, dist = Math.hypot(dx, dy);
+        if (dist > shootRange) return;
+        let angleDiff = normAngle(Math.atan2(dy, dx) - gameState.player.angle);
+        if (angleDiff > Math.PI) angleDiff = 2 * Math.PI - angleDiff;
+        if (Math.abs(angleDiff) < shootAngle && hasLineOfSight(e.x, e.y)) {
+          e.health--; playSound('hit');
+          gameState.hitMarkers.push({ x: canvas.width / 2, y: canvas.height / 2, alpha: 1 });
+          if (e.health <= 0) { e.alive = false; gameState.player.score += 100; } else { gameState.player.score += 25; }
+        }
+      });
+      if (gameState.enemies.every(e => !e.alive)) { gameState.gameOver = true; endGame(true); }
+    }
+
+    function reload() { if(gameState.player.reloading || gameState.player.isDead) return; playSound('reload'); gameState.player.reloading = true; gameState.player.reloadTime = 2000; }
+    function hasLineOfSight(tX, tY) { const dx = tX - gameState.player.x, dy = tY - gameState.player.y; return castRay(Math.atan2(dy, dx)).distance + 0.1 >= Math.hypot(dx, dy); }
+    function checkCollision(nX, nY) { const mX = Math.floor(nX), mY = Math.floor(nY); if (mX < 0 || mX >= gameState.map[0].length || mY < 0 || mY >= gameState.map.length) return true; return gameState.map[mY][mX] === 1; }
+    
+    // NEW: Function to send game data to RGSS2 host, modeled after the Tetris game.
+    function sendGameData(finalScore, resultType, timePlayed) {
+        console.log('Game finished! Sending final data to the bridge host.');
+
+        const enemiesKilled = gameState.enemies.filter(e => !e.alive).length;
+
+        // Construct the data payload with keys that match the RGSS script.
+        const gameData = {
+            type: 'game_completed',      // Required key to trigger the listener
+            score: finalScore,
+            result: resultType,          // "victory" or "failed"
+            coins: Math.floor(finalScore / 10),
+            exp: finalScore * 2,
+            time: timePlayed,            // Time in seconds
+            str: 1,                      // Static value
+            def: 2,                      // Static value
+            atk: 0,                      // Static value
+            hp: gameState.player.health, // Send player's final health
+            mp: 5,                       // Static value
+            custom: {                    // Custom data relevant to this game
+                enemies_killed: enemiesKilled,
+                total_enemies: gameState.enemies.length
+            }
+        };
+
+        // Use parent.postMessage to send the data up to the hosting <iframe>
+        parent.postMessage(gameData, '*');
+
+        // Provide feedback to the player on the game over screen
+        document.getElementById('results-message').style.display = 'block';
+    }
+
+    function endGame(playerWon) {
+        document.getElementById('background-music').pause();
+
+        // NEW: Calculate total time played.
+        const timePlayed = Math.floor((Date.now() - gameState.startTime) / 1000);
+
+        const titleEl = document.getElementById('game-over-title');
+        const subtitleEl = document.getElementById('game-over-subtitle');
+        let resultType;
+
+        if (playerWon) {
+            resultType = 'victory';
+            titleEl.textContent = 'MISSION COMPLETE!';
+            subtitleEl.textContent = `All enemies eliminated! Final Score: ${gameState.player.score}`;
+        } else {
+            resultType = 'failed';
+            titleEl.textContent = 'MISSION FAILED';
+            subtitleEl.textContent = 'You have been eliminated.';
+        }
+        
+        document.getElementById('game-over').style.display = 'block';
+        document.exitPointerLock();
+
+        // NEW: Call the function to send the final game data.
+        sendGameData(gameState.player.score, resultType, timePlayed);
+    }
+
+    document.addEventListener('keydown', (e) => { const k = e.key.toLowerCase(); if (k in gameState.keys) gameState.keys[k] = true; if (k === 'r') reload(); });
+    document.addEventListener('keyup', (e) => { const k = e.key.toLowerCase(); if (k in gameState.keys) gameState.keys[k] = false; });
+    document.addEventListener('mousemove', (e) => { if (gameState.pointerLocked && !gameState.player.isDead) gameState.player.angle = normAngle(gameState.player.angle + e.movementX * 0.002); });
+    
+    canvas.addEventListener('click', () => {
+      const music = document.getElementById('background-music');
+      if (!gameState.pointerLocked && !gameState.gameOver) {
+        canvas.requestPointerLock().catch(e => console.error("Pointer lock failed:", e));
+        if (audioContext.state === 'suspended') audioContext.resume();
+        if (music.paused) { music.currentTime = 0; music.play().catch(e => console.error("Music playback failed: ", e)); }
+      } else { shoot(); }
+    });
+//SIGNATURE: KAROKH KAPPEN ARAF
+    document.addEventListener('pointerlockchange', () => { gameState.pointerLocked = (document.pointerLockElement === canvas); });
+    document.getElementById('restart-btn').addEventListener('click', initGame);
+
+    async function main() {
+        console.log("Loading assets...");
+        await preloadAssets();
+        console.log("Assets loaded. Starting game.");
+        initGame();
+        gameLoop(0);
+    }
+    main();
+  </script>
+</body>
+</html>
