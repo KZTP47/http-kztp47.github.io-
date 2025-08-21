@@ -205,7 +205,7 @@
     <div id="instructions">Press TAB for Menu and Info</div>
     <div id="ui">
       <div id="health">HEALTH: 100%</div>
-      <div id="ammo">AMMO: 48/48</div>
+      <div id="ammo">AMMO: 47/47</div>
       <div id="ultimate-status">ULTIMATE: READY</div>
       <div id="score">SCORE: 0</div>
     </div>
@@ -265,7 +265,7 @@
             }
         });
     }
-
+//SIGNATURE: Karokh Kappen Araf
     // --- GAME STATE ---
     let gameState = {};
 
@@ -316,7 +316,7 @@
       gameState = {
         startTime: Date.now(),
         //-- MODIFICATION: Re-added reloading state --*/
-        player: { x: playerSpawn.x, y: playerSpawn.y, angle: 0, fov: Math.PI / 3, health: 100, maxAmmo: 48, ammo: 48, score: 0, reloading: false, reloadTime: 0, isDead: false, damageFlash: 0, weaponBob: 0, isMoving: false, ultimateCooldown: 0 },
+        player: { x: playerSpawn.x, y: playerSpawn.y, angle: 0, fov: Math.PI / 3, health: 100, maxAmmo: 47, ammo: 47, score: 0, reloading: false, reloadTime: 0, isDead: false, damageFlash: 0, weaponBob: 0, isMoving: false, ultimateCooldown: 0 },
         map: newMap, enemies: newEnemies,
         healthPacks: [], lightningEffect: null,
         healthPackSpawnTimer: 20000,
@@ -736,3 +736,4 @@
   </script>
 </body>
 </html>
+
