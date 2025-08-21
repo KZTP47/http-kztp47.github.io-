@@ -42,14 +42,16 @@
       justify-content: space-between;
       align-items: center;
       box-sizing: border-box;
+      height: 65px;
     }
-    #health, #ammo, #score {
+    #health, #ammo, #score, #ultimate-status {
       font-size: 24px;
       font-weight: bold;
       text-shadow: 2px 2px 4px #000;
     }
     #health { color: #00ff00; }
     #ammo   { color: #ffff00; }
+    #ultimate-status { color: #00ffff; }
     #title {
       position: absolute;
       top: 20px;
@@ -86,20 +88,8 @@
       background-color: #ff0000;
       box-shadow: 0 0 4px rgba(255, 0, 0, 0.8);
     }
-    #crosshair::before {
-      top: 50%;
-      left: 0;
-      right: 0;
-      height: 2px;
-      transform: translateY(-50%);
-    }
-    #crosshair::after {
-      left: 50%;
-      top: 0;
-      bottom: 0;
-      width: 2px;
-      transform: translateX(-50%);
-    }
+    #crosshair::before { top: 50%; left: 0; right: 0; height: 2px; transform: translateY(-50%); }
+    #crosshair::after { left: 50%; top: 0; bottom: 0; width: 2px; transform: translateX(-50%); }
     #minimap-container {
       position: absolute;
       top: 20px;
@@ -109,10 +99,7 @@
       background-color: rgba(0, 0, 0, 0.7);
       border: 2px solid #ff0000;
     }
-    #minimap {
-        width: 100%;
-        height: 100%;
-    }
+    #minimap { width: 100%; height: 100%; }
     #game-over {
       position: absolute;
       top: 50%;
@@ -130,12 +117,7 @@
     }
     #game-over-title { font-size: 48px; margin-bottom: 10px; }
     #game-over-subtitle { font-size: 18px; margin: 10px 0; }
-    /* NEW: Style for the results message, learned from Tetris game */
-    #results-message {
-      margin-top: 1.5rem;
-      font-size: 1.2rem;
-      color: #2ecc71; /* Green color for success message */
-    }
+    #results-message { margin-top: 1.5rem; font-size: 1.2rem; color: #2ecc71; }
     #restart-btn {
       background-color: #ff0000;
       color: #000;
@@ -147,6 +129,66 @@
       margin-top: 20px;
     }
     #restart-btn:hover { background-color: #cc0000; }
+    
+    /*-- MODIFICATION: Styles for the new pause menu --*/
+    #pause-menu {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.85);
+      color: #fff;
+      display: none; /* Hidden by default */
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 30;
+      border: 4px solid #ff0000;
+      box-sizing: border-box;
+    }
+    #pause-menu h2 { font-size: 48px; color: #ff0000; text-shadow: 3px 3px 6px #000; margin-bottom: 20px; }
+    #controls-info { text-align: left; font-size: 18px; line-height: 1.6; }
+    #controls-info strong { color: #ff0000; }
+    #resume-btn {
+      background-color: #ff0000;
+      color: #000;
+      border: none;
+      padding: 15px 30px;
+      font-size: 22px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 30px;
+    }
+    #resume-btn:hover { background-color: #cc0000; }
+    
+    /*-- MODIFICATION: Volume control is no longer absolutely positioned --*/
+    #volume-control {
+      margin-top: 30px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: #fff;
+      font-size: 18px;
+    }
+    #volume-slider {
+      -webkit-appearance: none; appearance: none;
+      width: 200px; height: 10px;
+      background: #444; outline: none;
+      border: 1px solid #ff0000; cursor: pointer;
+      margin-top: 10px;
+    }
+    #volume-slider::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none;
+      width: 20px; height: 20px;
+      background: #ff0000; cursor: pointer;
+      border: 1px solid #000;
+    }
+    #volume-slider::-moz-range-thumb {
+      width: 20px; height: 20px;
+      background: #ff0000; cursor: pointer;
+      border: 1px solid #000;
+    }
   </style>
 </head>
 <body>
@@ -159,10 +201,12 @@
     </div>
     <div id="crosshair"></div>
     <div id="title">DOOM CLONE</div>
-    <div id="instructions">WASD to move | Mouse to look | Click to shoot | R to reload</div>
+    <!--//-- MODIFICATION: Updated instructions text --*/-->
+    <div id="instructions">Press TAB for Menu and Info</div>
     <div id="ui">
       <div id="health">HEALTH: 100%</div>
-      <div id="ammo">AMMO: 47/47</div>
+      <div id="ammo">AMMO: 48/48</div>
+      <div id="ultimate-status">ULTIMATE: READY</div>
       <div id="score">SCORE: 0</div>
     </div>
     <div id="game-over">
@@ -173,6 +217,24 @@
         <p>You can now close this window.</p>
       </div>
       <button id="restart-btn">RESTART GAME</button>
+    </div>
+
+    <!--//-- MODIFICATION: New HTML for the pause menu --*/-->
+    <div id="pause-menu">
+      <h2>PAUSED</h2>
+      <div id="controls-info">
+        <p><strong>WASD</strong> - Move</p>
+        <p><strong>Mouse</strong> - Look</p>
+        <p><strong>Click</strong> - Shoot</p>
+        <p><strong>R</strong> - Reload</p>
+        <p><strong>E</strong> - Lightning Strike</p>
+        <p><strong>TAB</strong> - Open/Close Menu</p>
+      </div>
+      <div id="volume-control">
+        <span>VOLUME</span>
+        <input type="range" id="volume-slider" min="0" max="100" value="50">
+      </div>
+      <button id="resume-btn">RESUME GAME</button>
     </div>
   </div>
 
@@ -224,18 +286,13 @@
                 diggerX = newX; diggerY = newY; carvedCount += 2;
             } else {
                 const carvedTiles = [];
-                for(let y = 1; y < height - 1; y++) {
-                    for (let x = 1; x < width - 1; x++) { if (map[y][x] === 0) carvedTiles.push({x, y}); }
-                }
-                if (carvedTiles.length > 0) {
-                    const randomTile = carvedTiles[Math.floor(Math.random() * carvedTiles.length)];
-                    diggerX = randomTile.x; diggerY = randomTile.y;
-                }
+                for(let y = 1; y < height - 1; y++) for (let x = 1; x < width - 1; x++) if (map[y][x] === 0) carvedTiles.push({x, y});
+                if (carvedTiles.length > 0) { const randomTile = carvedTiles[Math.floor(Math.random() * carvedTiles.length)]; diggerX = randomTile.x; diggerY = randomTile.y; }
             }
         }
         return map;
     }
-//signature: Karokh kappen Araf
+
     function createEnemy(x, y) {
         let type = (MONSTER_TYPE_COUNT > 0) ? Math.floor(Math.random() * MONSTER_TYPE_COUNT) : 0;
         return { x, y, alive: true, health: 3, state: 'idle', attackCooldown: 0, lastSeenPlayerX: 0, lastSeenPlayerY: 0, monsterType: type };
@@ -257,29 +314,41 @@
           else i--;
       }
       gameState = {
-        // NEW: Added startTime for tracking game duration.
         startTime: Date.now(),
-        player: { x: playerSpawn.x, y: playerSpawn.y, angle: 0, fov: Math.PI / 3, health: 100, maxAmmo: 47, ammo: 47, score: 0, reloading: false, reloadTime: 0, isDead: false, damageFlash: 0, weaponBob: 0, isMoving: false },
+        //-- MODIFICATION: Re-added reloading state --*/
+        player: { x: playerSpawn.x, y: playerSpawn.y, angle: 0, fov: Math.PI / 3, health: 100, maxAmmo: 48, ammo: 48, score: 0, reloading: false, reloadTime: 0, isDead: false, damageFlash: 0, weaponBob: 0, isMoving: false, ultimateCooldown: 0 },
         map: newMap, enemies: newEnemies,
-        keys: { w:false, a:false, s:false, d:false, r:false },
+        healthPacks: [], lightningEffect: null,
+        healthPackSpawnTimer: 20000,
+        //-- MODIFICATION: Added 'e' to keys and a new isPaused state --*/
+        keys: { w:false, a:false, s:false, d:false, r:false, e:false },
+        isPaused: false,
         pointerLocked: false, gameOver: false, muzzleFlash: 0,
         hitMarkers: [], depthBuffer: new Array(canvas.width).fill(Infinity)
       };
-      // NEW: Ensure the results message is hidden on a new game/restart.
       document.getElementById('results-message').style.display = 'none';
       document.getElementById('game-over').style.display = 'none';
+      //-- MODIFICATION: Make sure menu is hidden on start/restart --*/
+      document.getElementById('pause-menu').style.display = 'none';
       if (document.pointerLockElement) document.exitPointerLock();
     }
 
+    // --- SOUND ENGINE ---
+    let sfxVolume = 0.5;
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    
     function playSound(type) {
         if (!audioContext || audioContext.state === 'suspended') audioContext.resume();
         if (!audioContext) return;
         const o = audioContext.createOscillator(), g = audioContext.createGain();
-        o.connect(g); g.connect(audioContext.destination); g.gain.setValueAtTime(0, audioContext.currentTime); g.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.01);
+        o.connect(g); g.connect(audioContext.destination); g.gain.setValueAtTime(0, audioContext.currentTime);
+        g.gain.linearRampToValueAtTime(0.3 * sfxVolume, audioContext.currentTime + 0.01);
         switch(type) {
             case 'shoot': o.type = 'sawtooth'; o.frequency.setValueAtTime(440, audioContext.currentTime); o.frequency.exponentialRampToValueAtTime(110, audioContext.currentTime + 0.1); g.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.15); break;
+            //-- MODIFICATION: Re-added reload sound --*/
             case 'reload': o.type = 'square'; o.frequency.setValueAtTime(220, audioContext.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.4); break;
+            case 'ultimate': o.type = 'square'; o.frequency.setValueAtTime(1000, audioContext.currentTime); o.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 0.5); g.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.5); break;
+            case 'pickup': o.type = 'sine'; o.frequency.setValueAtTime(1200, audioContext.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.2); break;
             case 'hit': o.type = 'sine'; o.frequency.setValueAtTime(880, audioContext.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.2); break;
             case 'player_hurt': o.type = 'triangle'; o.frequency.setValueAtTime(330, audioContext.currentTime); o.frequency.exponentialRampToValueAtTime(100, audioContext.currentTime + 0.2); g.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.2); break;
         }
@@ -323,17 +392,40 @@
 
     function drawSprites() {
         if (!assetsLoaded) return;
-        gameState.enemies.filter(e => e.alive).map(e => ({ ...e, dist: Math.hypot(e.x - gameState.player.x, e.y - gameState.player.y) })).sort((a, b) => b.dist - a.dist)
-        .forEach(e => {
-            const img = monsterImages[e.monsterType];
-            if (!img || !img.complete || img.naturalHeight === 0 || e.dist < 0.5) return;
-            const dx = e.x - gameState.player.x, dy = e.y - gameState.player.y, eAng = Math.atan2(dy, dx);
-            let rel = normAngle(eAng - gameState.player.angle);
+        const sprites = [
+            ...gameState.enemies.filter(e => e.alive).map(e => ({ ...e, type: 'enemy', dist: Math.hypot(e.x - gameState.player.x, e.y - gameState.player.y) })),
+            ...gameState.healthPacks.map(h => ({ ...h, type: 'health', dist: Math.hypot(h.x - gameState.player.x, h.y - gameState.player.y) }))
+        ];
+        sprites.sort((a, b) => b.dist - a.dist);
+        sprites.forEach(sprite => {
+            if (sprite.dist < 0.5) return;
+            const dx = sprite.x - gameState.player.x, dy = sprite.y - gameState.player.y, spriteAngle = Math.atan2(dy, dx);
+            let rel = normAngle(spriteAngle - gameState.player.angle);
             if (rel > Math.PI) rel -= 2 * Math.PI;
             if (Math.abs(rel) < gameState.player.fov / 2 + 0.2) {
-                const eSize = canvas.height / e.dist, sX = Math.floor((canvas.width / 2) * (1 + Math.tan(rel) / Math.tan(gameState.player.fov / 2)));
-                const ySt = canvas.height / 2 - eSize / 2, stX = Math.floor(sX - eSize / 2), eX = Math.floor(sX + eSize / 2);
-                for (let x = stX; x < eX; x++) if (x >= 0 && x < canvas.width && gameState.depthBuffer[x] > e.dist) ctx.drawImage(img, Math.floor(((x - stX) / eSize) * img.width), 0, 1, img.height, x, ySt, 1, eSize);
+                const spriteSize = canvas.height / sprite.dist;
+                const screenX = Math.floor((canvas.width / 2) * (1 + Math.tan(rel) / Math.tan(gameState.player.fov / 2)));
+                const yStart = canvas.height / 2 - spriteSize / 2;
+                const startX = Math.floor(screenX - spriteSize / 2);
+                const endX = Math.floor(screenX + spriteSize / 2);
+                for (let x = startX; x < endX; x++) {
+                    if (x >= 0 && x < canvas.width && gameState.depthBuffer[x] > sprite.dist) {
+                        if (sprite.type === 'enemy') {
+                            const img = monsterImages[sprite.monsterType];
+                            if (img && img.complete && img.naturalHeight > 0) {
+                                const texX = Math.floor(((x - startX) / spriteSize) * img.width);
+                                ctx.drawImage(img, texX, 0, 1, img.height, x, yStart, 1, spriteSize);
+                            }
+                        } else if (sprite.type === 'health') {
+                            const midPoint = yStart + spriteSize / 2;
+                            ctx.fillStyle = 'rgba(0, 255, 0, 0.8)';
+                            ctx.fillRect(x, midPoint - spriteSize * 0.1, 1, spriteSize * 0.2);
+                            if (x > startX + spriteSize * 0.4 && x < startX + spriteSize * 0.6) {
+                                ctx.fillRect(startX + spriteSize/2, yStart, 1, spriteSize);
+                            }
+                        }
+                    }
+                }
             }
         });
     }
@@ -342,7 +434,30 @@
       if (gameState.muzzleFlash > 0) { ctx.fillStyle = `rgba(255, 255, 0, ${gameState.muzzleFlash})`; ctx.fillRect(0, 0, canvas.width, canvas.height); gameState.muzzleFlash = Math.max(0, gameState.muzzleFlash - 0.1); }
       if (gameState.player.damageFlash > 0) { ctx.fillStyle = `rgba(255, 0, 0, ${gameState.player.damageFlash})`; ctx.fillRect(0, 0, canvas.width, canvas.height); gameState.player.damageFlash = Math.max(0, gameState.player.damageFlash - 0.05); }
       gameState.hitMarkers.forEach((m, idx) => { ctx.strokeStyle = `rgba(255, 255, 255, ${m.alpha})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(m.x - 10, m.y - 10); ctx.lineTo(m.x + 10, m.y + 10); ctx.moveTo(m.x + 10, m.y - 10); ctx.lineTo(m.x - 10, m.y + 10); ctx.stroke(); m.alpha -= 0.05; if (m.alpha <= 0) gameState.hitMarkers.splice(idx, 1); });
+      
+      //-- MODIFICATION: Re-added reloading text display --*/
       if (gameState.player.reloading) { ctx.fillStyle = 'rgba(255, 255, 0, 0.8)'; ctx.font = '24px Courier New'; ctx.textAlign = 'center'; ctx.fillText('RELOADING...', canvas.width / 2, canvas.height / 2 + 100); }
+
+      if (gameState.lightningEffect && gameState.lightningEffect.duration > 0) {
+          const effect = gameState.lightningEffect;
+          ctx.strokeStyle = `rgba(255, 255, 255, ${effect.duration / 200})`;
+          ctx.lineWidth = 5;
+          ctx.beginPath();
+          ctx.moveTo(canvas.width / 2, canvas.height);
+          const dx = effect.targetX - gameState.player.x, dy = effect.targetY - gameState.player.y;
+          const angle = Math.atan2(dy, dx);
+          let rel = normAngle(angle - gameState.player.angle);
+          if (rel > Math.PI) rel -= 2 * Math.PI;
+          const screenX = Math.floor((canvas.width / 2) * (1 + Math.tan(rel) / Math.tan(gameState.player.fov / 2)));
+          const screenY = canvas.height / 2;
+          for (let i = 0; i < 1; i += 0.1) {
+              const x = (canvas.width / 2) * (1 - i) + screenX * i;
+              const y = canvas.height * (1 - i) + screenY * i;
+              ctx.lineTo(x + (Math.random() - 0.5) * 20, y + (Math.random() - 0.5) * 20);
+          }
+          ctx.lineTo(screenX, screenY);
+          ctx.stroke();
+      }
     }
 
     function drawMinimap() {
@@ -350,25 +465,47 @@
       if (!gameState.map) return;
       const scale = minimap.width / gameState.map[0].length;
       for (let y = 0; y < gameState.map.length; y++) for (let x = 0; x < gameState.map[y].length; x++) if (gameState.map[y][x] === 1) { minimapCtx.fillStyle = '#666'; minimapCtx.fillRect(x * scale, y * scale, scale, scale); }
+      gameState.healthPacks.forEach(h => { minimapCtx.fillStyle = '#00ff00'; minimapCtx.fillRect(h.x * scale - 2, h.y * scale - 2, 4, 4); });
       gameState.enemies.forEach(e => { if (e.alive) { minimapCtx.fillStyle = '#ff0000'; minimapCtx.fillRect(e.x * scale - 1, e.y * scale - 1, 2, 2); } });
       minimapCtx.fillStyle = '#00ff00'; minimapCtx.fillRect(gameState.player.x * scale - 2, gameState.player.y * scale - 2, 4, 4);
       minimapCtx.strokeStyle = '#00ff00'; minimapCtx.beginPath(); minimapCtx.moveTo(gameState.player.x * scale, gameState.player.y * scale); minimapCtx.lineTo(gameState.player.x * scale + Math.cos(gameState.player.angle) * 10, gameState.player.y * scale + Math.sin(gameState.player.angle) * 10); minimapCtx.stroke();
     }
 
     let lastTime = 0;
-    function gameLoop(timestamp) { if (!gameState.gameOver) update(timestamp); drawScene(); requestAnimationFrame(gameLoop); }
-    function update(timestamp) { const dt = Math.min(50, timestamp - (lastTime || timestamp)); lastTime = timestamp; updatePlayer(dt); updateEnemies(dt); updateUI(); }
+    //-- MODIFICATION: Main game loop now checks for isPaused state --*/
+    function gameLoop(timestamp) { 
+      if (!gameState.isPaused && !gameState.gameOver) { 
+        update(timestamp); 
+      } 
+      drawScene(); 
+      requestAnimationFrame(gameLoop); 
+    }
+
+    function update(timestamp) { const dt = Math.min(50, timestamp - (lastTime || timestamp)); lastTime = timestamp; updatePlayer(dt); updateEnemies(dt); updateItems(dt); updateUI(); }
     
     function updatePlayer(dt) {
       if (gameState.player.isDead) return;
       gameState.player.isMoving = gameState.keys.w || gameState.keys.s || gameState.keys.a || gameState.keys.d;
-      if (gameState.player.reloading) { gameState.player.reloadTime -= dt; if (gameState.player.reloadTime <= 0) { gameState.player.reloading = false; gameState.player.ammo = gameState.player.maxAmmo; } }
+      
+      //-- MODIFICATION: Re-added reload timer logic --*/
+      if (gameState.player.reloading) {
+        gameState.player.reloadTime -= dt;
+        if (gameState.player.reloadTime <= 0) {
+            gameState.player.reloading = false;
+            gameState.player.ammo = gameState.player.maxAmmo;
+        }
+      }
+
+      if (gameState.player.ultimateCooldown > 0) gameState.player.ultimateCooldown -= dt;
+      if (gameState.lightningEffect) gameState.lightningEffect.duration -= dt;
+
       const moveSpeed = 0.003 * dt;
       let newX = gameState.player.x, newY = gameState.player.y;
       if (gameState.keys.w) { newX += Math.cos(gameState.player.angle) * moveSpeed; newY += Math.sin(gameState.player.angle) * moveSpeed; }
       if (gameState.keys.s) { newX -= Math.cos(gameState.player.angle) * moveSpeed; newY -= Math.sin(gameState.player.angle) * moveSpeed; }
-      if (gameState.keys.a) { newX += -Math.sin(gameState.player.angle) * moveSpeed; newY += Math.cos(gameState.player.angle) * moveSpeed; }
-      if (gameState.keys.d) { newX += Math.sin(gameState.player.angle) * moveSpeed; newY += -Math.cos(gameState.player.angle) * moveSpeed; }
+      if (gameState.keys.a) { newX += Math.sin(gameState.player.angle) * moveSpeed; newY += -Math.cos(gameState.player.angle) * moveSpeed; }
+      if (gameState.keys.d) { newX += -Math.sin(gameState.player.angle) * moveSpeed; newY += Math.cos(gameState.player.angle) * moveSpeed; }
+      
       if (!checkCollision(newX, gameState.player.y)) gameState.player.x = newX;
       if (!checkCollision(gameState.player.x, newY)) gameState.player.y = newY;
     }
@@ -391,10 +528,40 @@
         });
     }
 
+    function updateItems(dt) {
+        gameState.healthPackSpawnTimer -= dt;
+        if (gameState.healthPackSpawnTimer <= 0) {
+            gameState.healthPackSpawnTimer = 20000;
+            if (gameState.healthPacks.length < 5) {
+                const validSpawns = [];
+                for (let y = 0; y < gameState.map.length; y++) for (let x = 0; x < gameState.map[y].length; x++) if (gameState.map[y][x] === 0) validSpawns.push({ x: x + 0.5, y: y + 0.5 });
+                if (validSpawns.length > 0) {
+                    const spawn = validSpawns[Math.floor(Math.random() * validSpawns.length)];
+                    gameState.healthPacks.push({ x: spawn.x, y: spawn.y });
+                }
+            }
+        }
+        gameState.healthPacks.forEach((pack, index) => {
+            if (Math.hypot(pack.x - gameState.player.x, pack.y - gameState.player.y) < 0.5) {
+                gameState.player.health = Math.min(100, gameState.player.health + 25);
+                gameState.healthPacks.splice(index, 1);
+                playSound('pickup');
+            }
+        });
+    }
+
     function updateUI() {
       document.getElementById('health').textContent = `HEALTH: ${gameState.player.health}%`;
       document.getElementById('ammo').textContent   = `AMMO: ${gameState.player.ammo}/${gameState.player.maxAmmo}`;
       document.getElementById('score').textContent  = `SCORE: ${gameState.player.score}`;
+      const ultStatus = document.getElementById('ultimate-status');
+      if (gameState.player.ultimateCooldown <= 0) {
+          ultStatus.textContent = 'ULTIMATE: READY';
+          ultStatus.style.color = '#00ffff';
+      } else {
+          ultStatus.textContent = `ULTIMATE: ${Math.ceil(gameState.player.ultimateCooldown / 1000)}s`;
+          ultStatus.style.color = '#888888';
+      }
     }
 
     function takePlayerDamage(damage) {
@@ -405,6 +572,7 @@
     }
 
     function shoot() {
+      //-- MODIFICATION: Re-added reloading check --*/
       if (gameState.player.ammo <= 0 || gameState.player.reloading || gameState.player.isDead) return;
       playSound('shoot'); gameState.player.ammo--; gameState.muzzleFlash = 0.4;
       const shootRange = 30, shootAngle = 0.08;
@@ -422,53 +590,63 @@
       });
       if (gameState.enemies.every(e => !e.alive)) { gameState.gameOver = true; endGame(true); }
     }
+    
+    //-- MODIFICATION: Re-implemented the reload function --*/
+    function reload() {
+        if (gameState.player.reloading || gameState.player.isDead || gameState.player.ammo === gameState.player.maxAmmo) return;
+        playSound('reload');
+        gameState.player.reloading = true;
+        gameState.player.reloadTime = 2000;
+    }
 
-    function reload() { if(gameState.player.reloading || gameState.player.isDead) return; playSound('reload'); gameState.player.reloading = true; gameState.player.reloadTime = 2000; }
+    function useUltimate() {
+        if (gameState.player.ultimateCooldown > 0 || gameState.player.isDead) return;
+        let target = null;
+        let minDistance = Infinity;
+        gameState.enemies.forEach(enemy => {
+            if (enemy.alive) {
+                const dist = Math.hypot(enemy.x - gameState.player.x, enemy.y - gameState.player.y);
+                if (dist < minDistance && hasLineOfSight(enemy.x, enemy.y)) {
+                    minDistance = dist;
+                    target = enemy;
+                }
+            }
+        });
+        if (target) {
+            playSound('ultimate');
+            gameState.player.ultimateCooldown = 60000;
+            target.health -= 10;
+            gameState.lightningEffect = { targetX: target.x, targetY: target.y, duration: 200 };
+            if (target.health <= 0) {
+                target.alive = false;
+                gameState.player.score += 100;
+            }
+            if (gameState.enemies.every(e => !e.alive)) { gameState.gameOver = true; endGame(true); }
+        }
+    }
+
     function hasLineOfSight(tX, tY) { const dx = tX - gameState.player.x, dy = tY - gameState.player.y; return castRay(Math.atan2(dy, dx)).distance + 0.1 >= Math.hypot(dx, dy); }
     function checkCollision(nX, nY) { const mX = Math.floor(nX), mY = Math.floor(nY); if (mX < 0 || mX >= gameState.map[0].length || mY < 0 || mY >= gameState.map.length) return true; return gameState.map[mY][mX] === 1; }
     
-    // NEW: Function to send game data to RGSS2 host, modeled after the Tetris game.
     function sendGameData(finalScore, resultType, timePlayed) {
         console.log('Game finished! Sending final data to the bridge host.');
-
         const enemiesKilled = gameState.enemies.filter(e => !e.alive).length;
-
-        // Construct the data payload with keys that match the RGSS script.
         const gameData = {
-            type: 'game_completed',      // Required key to trigger the listener
-            score: finalScore,
-            result: resultType,          // "victory" or "failed"
-            coins: Math.floor(finalScore / 10),
-            exp: finalScore * 2,
-            time: timePlayed,            // Time in seconds
-            str: 1,                      // Static value
-            def: 2,                      // Static value
-            atk: 0,                      // Static value
-            hp: gameState.player.health, // Send player's final health
-            mp: 5,                       // Static value
-            custom: {                    // Custom data relevant to this game
-                enemies_killed: enemiesKilled,
-                total_enemies: gameState.enemies.length
-            }
+            type: 'game_completed', score: finalScore, result: resultType,
+            coins: Math.floor(finalScore / 10), exp: finalScore * 2,
+            time: timePlayed, str: 1, def: 2, atk: 0, hp: gameState.player.health,
+            mp: 5, custom: { enemies_killed: enemiesKilled, total_enemies: gameState.enemies.length }
         };
-
-        // Use parent.postMessage to send the data up to the hosting <iframe>
         parent.postMessage(gameData, '*');
-
-        // Provide feedback to the player on the game over screen
         document.getElementById('results-message').style.display = 'block';
     }
 
     function endGame(playerWon) {
         document.getElementById('background-music').pause();
-
-        // NEW: Calculate total time played.
         const timePlayed = Math.floor((Date.now() - gameState.startTime) / 1000);
-
         const titleEl = document.getElementById('game-over-title');
         const subtitleEl = document.getElementById('game-over-subtitle');
         let resultType;
-
         if (playerWon) {
             resultType = 'victory';
             titleEl.textContent = 'MISSION COMPLETE!';
@@ -478,39 +656,83 @@
             titleEl.textContent = 'MISSION FAILED';
             subtitleEl.textContent = 'You have been eliminated.';
         }
-        
         document.getElementById('game-over').style.display = 'block';
         document.exitPointerLock();
-
-        // NEW: Call the function to send the final game data.
         sendGameData(gameState.player.score, resultType, timePlayed);
     }
 
-    document.addEventListener('keydown', (e) => { const k = e.key.toLowerCase(); if (k in gameState.keys) gameState.keys[k] = true; if (k === 'r') reload(); });
+    //-- MODIFICATION: New function to toggle the pause menu --*/
+    function togglePause() {
+        gameState.isPaused = !gameState.isPaused;
+        const menu = document.getElementById('pause-menu');
+        const music = document.getElementById('background-music');
+        if (gameState.isPaused) {
+            menu.style.display = 'flex';
+            music.pause();
+            document.exitPointerLock();
+        } else {
+            menu.style.display = 'none';
+            if (!gameState.gameOver) {
+                music.play().catch(e => console.error("Music playback failed:", e));
+                canvas.requestPointerLock().catch(e => console.error("Pointer lock failed:", e));
+            }
+        }
+    }
+
+    //-- MODIFICATION: Updated key bindings --*/
+    document.addEventListener('keydown', (e) => { 
+        const k = e.key.toLowerCase(); 
+        if (k === 'tab') {
+            e.preventDefault(); // Prevent browser from switching focus
+            togglePause();
+            return;
+        }
+        if (!gameState.isPaused) {
+            if (k in gameState.keys) gameState.keys[k] = true; 
+            if (k === 'r') reload(); 
+            if (k === 'e') useUltimate();
+        }
+    });
     document.addEventListener('keyup', (e) => { const k = e.key.toLowerCase(); if (k in gameState.keys) gameState.keys[k] = false; });
     document.addEventListener('mousemove', (e) => { if (gameState.pointerLocked && !gameState.player.isDead) gameState.player.angle = normAngle(gameState.player.angle + e.movementX * 0.002); });
     
     canvas.addEventListener('click', () => {
       const music = document.getElementById('background-music');
-      if (!gameState.pointerLocked && !gameState.gameOver) {
+      if (!gameState.pointerLocked && !gameState.gameOver && !gameState.isPaused) {
         canvas.requestPointerLock().catch(e => console.error("Pointer lock failed:", e));
         if (audioContext.state === 'suspended') audioContext.resume();
         if (music.paused) { music.currentTime = 0; music.play().catch(e => console.error("Music playback failed: ", e)); }
-      } else { shoot(); }
+      } else if (!gameState.isPaused) { 
+        shoot(); 
+      }
     });
 
     document.addEventListener('pointerlockchange', () => { gameState.pointerLocked = (document.pointerLockElement === canvas); });
     document.getElementById('restart-btn').addEventListener('click', initGame);
+    //-- MODIFICATION: Added event listener for the resume button --*/
+    document.getElementById('resume-btn').addEventListener('click', togglePause);
 
+    const volumeSlider = document.getElementById('volume-slider');
+    const backgroundMusic = document.getElementById('background-music');
+
+    function setVolume() {
+        const volume = volumeSlider.value / 100;
+        backgroundMusic.volume = volume;
+        sfxVolume = volume;
+    }
+
+    volumeSlider.addEventListener('input', setVolume);
+    
+    // --- START ---
     async function main() {
         console.log("Loading assets...");
         await preloadAssets();
         console.log("Assets loaded. Starting game.");
+        setVolume();
         initGame();
         gameLoop(0);
     }
     main();
   </script>
 </body>
-
 </html>
